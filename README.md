@@ -1,69 +1,85 @@
-# OK Clip Saver — Chrome + Firefox
+# Clip Saver v1.2.0 — Universal media detection (Chrome + Firefox)
 
-A cross-browser, Manifest V3 video download extension with an **English-first** debugging interface and a persistent **Русский / English** language switch. It targets videos that expose standard, accessible media URLs, including OK.ru pages such as `https://ok.ru/video/6809042487964`.
+One source code tree, two Manifest V3 packages. English is the default UI and debugging language, with a persistent **Русский** button. The **license indicator is informational only** and **never restricts any download buttons**. No server-side extractor, user account, advertising, telemetry, or remote script loader.
 
-**Copyright/license information is advisory only.** The extension reads machine-readable license declarations if available and otherwise shows **Not identified / Не определена**. A license label never disables a download button. The user is responsible for having whatever permission local law requires. A public video does *not* automatically mean royalty-free.
+## Install and use
 
-## Downloads
+1. **Chrome/Chromium/Brave/Edge:** unzip `ok-clip-saver-chrome.zip` to a permanent folder. Go to `chrome://extensions`, enable **Developer mode**, select **Load unpacked**, then choose the extracted folder containing `manifest.json`.
+2. **Firefox, temporary development installation:** unzip `ok-clip-saver-firefox.zip`. Go to `about:debugging#/runtime/this-firefox`, select **Load Temporary Add-on**, and choose `manifest.json`. The temporary add-on disappears on restart. Regular Firefox installs require signing; the `.xpi` archive supplied here is **unsigned**.
+3. Open any page containing a video, audio track, livestream recording, podcast episode or downloadable media. Open the Clip Saver icon. It scans the active page and embedded frames. **Press Play, then Scan again** if the site loads media only after playback begins.
+4. Choose an exposed format. Direct files use the browser download manager. Compatible unencrypted HLS playlists open a separate segment-saving tab. DASH playlist links can be copied but are not merged/downloaded as media by this version.
+5. Use **Русский / English** to switch interface language. **Diagnostics** displays copyable local debug logs.
 
-Choose from detected file qualities; an available direct MP4, WebM, MOV, or TS URL is sent to the browser's native Downloads manager. If OK.ru exposes no direct file, the extension can inspect the embedded player's metadata and its `videoPlayerMetadata` endpoint and can observe media URLs requested during video playback.
+## What “supports a site” means
 
-**HLS (`.m3u8`) fallback:** Select **Save stream** to open a download tab; it fetches *unencrypted MPEG-TS segments* as `.ts`, or supported fMP4 segments with an initialization fragment as `.mp4`. This is intended for short clips and has a 600 MiB memory guardrail. Complex streams (encrypted/DRM, byte-range playlists, multiple initialization maps, audio on a separate track, DASH) are identified but not converted. The feature does not attempt DRM decryption. You can convert a compatible `.ts` into an MP4 later with `ffmpeg -i input.ts -c copy output.mp4`.
+The program detects common media delivery patterns on **arbitrary HTTP(S) websites**; it does **not** maintain an exhaustive per-site download implementation. Recognizing a service's name is not proof that the service exposes a downloadable file. Domains and player APIs change, and some services only stream encrypted or inaccessible media.
 
-## Install on Chrome / Chromium / Brave / Edge
+### Discovery engines
 
-1. Unzip `ok-clip-saver-chrome.zip` to a folder you want to keep.
-2. Open **chrome://extensions** (or the equivalent extensions page).
-3. Turn on **Developer mode**.
-4. Click **Load unpacked** and select the extracted folder **containing `manifest.json`**.
-5. Open the desired `https://ok.ru/video/...` page, click **Play**, then click the **OK Clip Saver** toolbar icon.
-6. Select a quality and click **Download**. Use **Русский** at the top to switch the UI.
+- Standard HTML5 `<video>`, `<audio>`, nested `<source>`, current playback URLs and media-file links.
+- Open Graph and Twitter player metadata; HTML media `contentUrl` and JSON-LD `AudioObject`, `VideoObject`, `MediaObject`, `MusicRecording` and `PodcastEpisode`.
+- Podcast RSS `<enclosure>` and Media RSS audio/video links.
+- URL hints in the active page's resource timing data.
+- Media MIME response inspection (non-blocking `webRequest`), **armed only for the tab being inspected**; request URLs are stored briefly in local browser session storage. Open the popup and scan first, then play/rescan for dynamic sources. No global browsing history is collected.
+- Read-only, on-click inspection of known JW Player, Video.js and common embedded-player configuration surfaces.
+- Existing OK.ru player/embed parser, YouTube player response parsing and Vimeo player/config inspection.
 
-## Install on Firefox (development/testing)
+### Recognized service catalog
 
-1. Unzip `ok-clip-saver-firefox.zip` into a folder.
-2. Open `about:debugging#/runtime/this-firefox`.
-3. Click **Load Temporary Add-on…**.
-4. Select `manifest.json` in the extracted folder.
-5. Open the OK.ru video, play it, and click **OK Clip Saver**.
+The extension identifies these services for the user interface but applies the **same best-effort generic scanner** to most of them:
 
-**Important:** The temporary Firefox add-on must be loaded again after restarting Firefox. To install permanently in regular Firefox, the XPI must be signed through Mozilla's add-on signing workflow (AMO). The included **unsigned** `ok-clip-saver-firefox-unsigned.xpi` is for signing/developer workflows, not normal permanent installation. Chrome's ZIP is for *Load unpacked*, not Chrome Web Store installation.
+| Category | Examples | What may be available |
+|---|---|---|
+| Video/social | OK.ru, YouTube, Vimeo, Dailymotion, Twitch, Kick, TikTok, Instagram, Facebook, X/Twitter, Reddit, Streamable, Rumble, Odysee, BitChute, PeerTube | Public direct files or HLS; many videos use short-lived, signed, split-track, or inaccessible streams |
+| Regional and archival | VK Video, RuTube, Telegram, Bilibili, Niconico, Naver TV, Youku, Tencent Video, Douyin, Kuaishou, Internet Archive, Wikimedia Commons | Public files/embedded streams where exposed |
+| Music/audio | SoundCloud, Bandcamp, Mixcloud, Audiomack, YouTube Music, TuneIn, iHeartRadio, BBC Sounds, NPR | MP3/M4A/FLAC/OGG/Opus/WAV, or compatible HLS when exposed; continuous radio streams may never end on their own |
+| Podcasts | Apple Podcasts, Pocket Casts, Podbean, Buzzsprout, Spreaker, Libsyn, Acast, Audioboom, Simplecast, Castbox and independent RSS-based podcasts | Direct podcast episode enclosures and audio files |
+| Embedded players | JW Player, Video.js, Wistia, Brightcove, Kaltura, Vidyard, Panopto, Mux, Cloudflare Stream, Bunny Stream | Direct media or HLS, depending on configuration; merely recognizing the host does not enable extraction |
+| Streaming subscriptions | Netflix, Prime Video, Disney+, Hulu, Max, Peacock, Paramount+, Apple TV+, Spotify, Apple Music, Deezer, Tidal, Qobuz | **Usually not downloadable with this extension**; DRM and encrypted delivery are intentionally unsupported |
+| Other | Any independent news, school, blog, small radio station, museum, creator website, etc. | HTML5 `<video>/<audio>`, metadata, available player configurations, media response detection |
 
-## License status semantics
+The catalog is illustrative rather than a test certificate; even a listed site may return **zero usable results**.
 
-| UI state | Meaning | Download available? |
-| --- | --- | --- |
-| `Not identified` / `Не определена` | No explicit license element or metadata found; copyright status is **unknown** | **Yes**, if a technically downloadable file exists |
-| `CC BY`, URL, or other page label | This exact declaration appears in parsed page/player metadata; it is not independently authenticated | **Yes**, if a technically downloadable file exists |
+### File and playlist handling
 
-The extension does not infer permission merely because an uploader made a video public; it does not attempt to decide which copyright rules apply in a particular jurisdiction.
+- **Direct-download formats:** MP4, WebM, MOV, MP3, M4A, AAC, OGG, Opus, FLAC, WAV, AIFF, WMA, MKV, MKA, AMR, 3GP, OGV, MP2, TS. Actual content depends on the server response.
+- **Unencrypted HLS:** basic video VOD with MPEG-TS / one fMP4 initialization map; raw AAC and MP3 audio segments; best variant from simple master playlists. Up to 1,800 segments and a 600 MiB in-memory limit. It does **not** remux codecs or merge separate audio renditions.
+- **DASH `.mpd`:** manifest URL displayed and copyable; no DASH segment download/muxing in v1.2.0.
+- **Split tracks:** YouTube and other sites may expose **video-only** and **audio-only** files; their download buttons save those tracks separately. There is no automatic audio/video merging.
+- **Unknown MIME:** a valid media link without a recognizable extension/type may save as `.bin` and require renaming after verification; it is not assumed to be MP4.
+- **Protected sources:** no DRM removal, signature deciphering, subscription bypass, paywall bypass or encrypted HLS decryption. Signed URLs can expire or require a playback session. The browser accepting a download request does **not** guarantee the source will deliver the file.
 
-## Privacy and permissions
+## Copyright and license indicator
 
-- `activeTab`, `scripting`: inspect the user's open video page when they scan; the extension does not inject continuously.
-- `webRequest`: *observe, not intercept or modify*, OK.ru-initiated media requests while a video plays.
-- `downloads`: save direct video files using the browser's own download manager.
-- `tabs`: find the active tab and open the HLS progress tab.
-- `storage`: persist only language, short-lived media request matches, and an HLS job descriptor.
-- `<all_urls>` host access: enables cross-CDN media URL detection and fetching HLS fragments from whichever delivery network hosts them. It is broad access for compatibility; the capture callback intentionally disregards requests that are not initiated from OK.ru. Media URLs are never transmitted to an extension vendor or analytics endpoint.
+The badge shows metadata explicitly declared by the page/player (such as `rel=license`, license meta tags, JSON-LD, supported player metadata). Otherwise it reads **Not identified**. It is **not** an automated legal determination. A page's title, public accessibility, or presence of a download URL does not itself confer reuse rights. License information **does not gate, hide or disable download buttons**. Users must assess permissions, applicable law and provider terms separately.
 
-No remote JavaScript dependencies, tracking, servers, accounts, or external API keys. Diagnostics remain local until the user chooses **Copy**.
+## Browser permission and privacy design
 
-## Debugging
+- `activeTab`, `scripting`: inspect the current page **when the extension is opened / Scan is used**. MAIN-world extraction is read-only.
+- `downloads`: queue exposed media URLs in the browser's native download manager.
+- `webRequest`: observe media requests and response media MIME types. Capturing is active only after the user scans the tab (session-scoped), with no blocking or modifications.
+- `tabs`: inspect the active tab and open the HLS progress tab.
+- `storage`: remember language, tab-scoped detected media URLs, and short-lived HLS jobs; no remote analytics.
+- `<all_urls>` host permission: required for cross-origin embedded frames and arbitrary media CDN domains. This is intentionally a broad permission, so **install only from source you trust**. Browsers may ask to grant site permissions.
 
-Click **Diagnostics** in the popup; copy the log if a video fails. Try playing the clip and then pressing **Find video files** again. Signed player URLs can expire; reload the page and rescan. Some sites block downloads without their usual request context or use protected streams. The extension cannot guarantee every published video can be downloaded.
+If Firefox shows a permission prompt or content scan fails, inspect the extension's site access permissions and retry.
 
-Test fixture: `tests/media.test.js`. Run `node tests/media.test.js` from the project root. Package rebuild: `python build.py`.
+## Developer instructions
 
-## Project structure
+Rebuild with Python 3 and Pillow:
 
-- `src/media.js`: shared OK player/metadata extractor, URL and filename handling.
-- `src/content.js`: page DOM, JSON-LD license, HTML media elements, page resource scan.
-- `src/background.js`: browser messaging, OK embed/API lookup, passive media detection, native downloads.
-- `src/popup.html`, `popup.js`, `styles.css`: English/Russian interface, license state, quality selection, local debugging.
-- `src/hls.html`, `hls.js`: progressive HLS TS / supported fMP4 download in a separate tab.
-- `build.py`: generates Chrome and Firefox package manifests from the shared source.
+```bash
+node tests/media.test.js
+node tests/sites.test.js
+node tests/broad.test.js
+node tests/background.test.js
+python build.py
+```
 
-## Scope and limitations
+Mocked Chromium popup fixture: `python tests/ui_smoke.py` (requires local Chromium and Playwright); tests English/Russian, license badge, media rows and download click without installing an extension. Optional extension-loaded browser fixture: `python tests/browser_smoke.py`; locked-down Chromium environments may refuse sideloaded extensions. Success on either local fixture cannot verify third-party sites.
 
-Only standard accessible media is supported. Embedded-player layout and video APIs may change, and no working download for the specific example URL has been verified in a running browser. No guarantee is made about the legal status of any particular video, including the example URL.
+Main files: `src/media.js` (formats and general URLs), `src/sites.js` (named service catalog and OK/YouTube/Vimeo parsing), `src/content.js` (DOM and RSS inventory), `src/probe.js` (player configurations), `src/background.js` (opt-in network capture/download routing), `src/popup.*` and `src/styles.css` (bilingual UI), `src/hls.*` (compatible unencrypted HLS saver), `build.py` (Chrome and Firefox ZIPs plus unsigned XPI).
+
+## Distribution notes
+
+The Chrome Web Store imposes platform-specific restrictions, including on YouTube downloader functionality, so the Chrome build is intended for **developer-mode loading**, not assumed to be store-eligible. Firefox release distribution generally requires Mozilla signing. Users should assess local law, site terms, and permission to retain the media. No guarantee is made of downloads from any particular platform.

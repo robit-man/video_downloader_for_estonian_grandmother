@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "OK Clip Saver",
-  "short_name": "OK Saver",
-  "version": "1.0.0",
-  "description": "Save accessible OK.ru videos with an English/Russian interface and informational license indicator.",
+  "name": "Clip Saver",
+  "short_name": "Clip Saver",
+  "version": "1.2.0",
+  "description": "Find accessible video, audio and podcast files on sites across the web. English/Russian UI; advisory license information.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -17,7 +17,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "OK Clip Saver",
+    "default_title": "Clip Saver",
     "default_icon": {
       "16": "icons/icon16.png",
       "32": "icons/icon32.png"
@@ -32,13 +32,14 @@
   "background": {
     "scripts": [
       "media.js",
+      "sites.js",
       "background.js"
     ]
   },
   "browser_specific_settings": {
     "gecko": {
       "id": "ok-clip-saver@local.dev",
-      "strict_min_version": "121.0"
+      "strict_min_version": "128.0"
     }
   }
 }

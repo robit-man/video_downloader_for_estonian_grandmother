@@ -62,7 +62,10 @@
     if (segments.length>1800) throw new Error('Stream has too many segments for an in-browser download.');
     if (!lines.includes('#EXT-X-ENDLIST')) log('Warning: live/unfinished playlist. Only currently listed segments will be saved.');
     if (!init && segments.some(u=>/\.m4s(?:$|[?#])/i.test(u))) throw new Error('Fragmented MP4 stream is missing initialization data.');
-    return {segments, initUrl:init ? resolveChild(init,base) : null, ext:init ? 'mp4' : 'ts'};
+    // Audio-only HLS commonly uses raw ADTS AAC or MP3 segments rather than MPEG-TS.
+    const allExt=(extension)=>segments.every(u=>{try{return new URL(u).pathname.toLowerCase().endsWith('.'+extension)}catch{return false}});
+    const ext=init?'mp4':allExt('aac')?'aac':allExt('mp3')?'mp3':'ts';
+    return {segments, initUrl:init ? resolveChild(init,base) : null, ext};
   }
   async function loadPlaylist(master) {
     let current=master;
@@ -121,13 +124,13 @@
       await Promise.all(workers);
       if (controller.signal.aborted) return;
       setStatus(t('saving'));
-      const blob=new Blob(buffers,{type:playlist.ext==='mp4'?'video/mp4':'video/mp2t'});
+      const blob=new Blob(buffers,{type:playlist.ext==='mp4'?'video/mp4':playlist.ext==='mp3'?'audio/mpeg':playlist.ext==='aac'?'audio/aac':'video/mp2t'});
       const localUrl=URL.createObjectURL(blob);
       const a=document.createElement('a');
-      a.href=localUrl; a.download=MediaTools.sanitizeFilename(job.title||'OK-video')+'.'+playlist.ext;
+      a.href=localUrl; a.download=MediaTools.sanitizeFilename(job.title||'video')+'.'+playlist.ext;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(()=>URL.revokeObjectURL(localUrl),60000);
-      log(`Saved ${Math.round(blob.size/1048576)} MiB as .${playlist.ext}. MPEG-TS can be remuxed without re-encoding (ffmpeg -i input.ts -c copy output.mp4).`);
+      log(`Saved ${Math.round(blob.size/1048576)} MiB as .${playlist.ext}. For video MPEG-TS, remux to MP4 using ffmpeg -i input.ts -c copy output.mp4.`);
       setStatus(t('done')); $('fill').style.width='100%';
     } catch (err) {
       if (cancelled || controller.signal.aborted) { setStatus(t('cancelled')); }
