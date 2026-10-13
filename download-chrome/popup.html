@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>OK Clip Saver</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="header">
+      <div class="brand"><div class="mark" aria-hidden="true">↓</div><div><h1>OK Clip Saver</h1><p id="headerTagline">Save accessible video files</p></div></div>
+      <button id="langButton" class="ghost lang" type="button" aria-label="Switch language">Русский</button>
+    </header>
+    <section class="page">
+      <div class="section-header"><span class="eyebrow" data-i18n="videoPage">VIDEO PAGE</span><span id="pageState" class="state">—</span></div>
+      <label for="urlInput" class="sr-only" data-i18n="pageLink">Video page link</label>
+      <input id="urlInput" type="url" placeholder="https://ok.ru/video/…" spellcheck="false" autocomplete="off">
+      <button id="scanButton" class="primary full" type="button"><span data-i18n="scan">Find video files</span><span aria-hidden="true">↗</span></button>
+      <p class="hint" data-i18n="videoHint">Open the video and press Play before scanning for the best results.</p>
+    </section>
+    <section class="license-section" aria-label="License information">
+      <div class="license-line"><span class="eyebrow" data-i18n="licenseHeading">LICENSE INFORMATION</span><span id="licenseBadge" class="license-badge unknown">Not identified</span></div>
+      <p id="licenseDetail" class="muted">No license declaration detected. Check the video's page or uploader for usage rights.</p>
+      <p class="fineprint" data-i18n="licenseNote">Informational only. License status never blocks downloads.</p>
+    </section>
+    <section id="resultsSection" class="results" aria-live="polite">
+      <div class="section-header"><span class="eyebrow" data-i18n="foundFormats">AVAILABLE FORMATS</span><span id="formatCount" class="state">0</span></div>
+      <div id="resultList" class="result-list">
+        <div class="empty"><div class="empty-symbol">▶</div><p data-i18n="empty">Open an OK.ru video and scan to find downloadable files.</p></div>
+      </div>
+    </section>
+    <div id="message" class="notice" role="status" hidden></div>
+    <section class="diagnostics">
+      <button id="debugButton" class="debug-toggle" type="button" aria-expanded="false"><span><span class="debugdot"></span><span data-i18n="diagnostics">Diagnostics</span></span><span id="debugArrow">+</span></button>
+      <div id="debugPanel" hidden>
+        <div class="debug-head"><span data-i18n="localLogs">Local debug log</span><button id="copyButton" class="ghost small" type="button" data-i18n="copy">Copy</button></div>
+        <pre id="debugText">Ready.</pre>
+      </div>
+    </section>
+    <footer><span data-i18n="footer">Local-only · No accounts · No tracking</span><span>v1.0.0</span></footer>
+  </main>
+  <script src="media.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
